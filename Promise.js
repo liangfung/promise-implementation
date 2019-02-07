@@ -31,16 +31,15 @@ function Promise(resolver) {
             if (val === this) {
               throw new Error('promise不能promise自己')
             }
-            // if (isPromise(val)) {
-            //   console.log(onFulfilled.toString(), 'val as promise')
-            //   return val.then(res => {
-            //     try {
-            //       isFunction(onFulfilled) ? resolve(onFulfilled(res)) : resolve(res)
-            //     } catch (e) {
-            //       reject(e)
-            //     }
-            //   }, reject)
-            // }
+            if (isPromise(val)) {
+              return val.then(res => {
+                try {
+                  isFunction(onFulfilled) ? resolve(onFulfilled(res)) : resolve(res)
+                } catch (e) {
+                  reject(e)
+                }
+              }, reject)
+            }
             try {
               isFunction(onFulfilled) ? resolve(onFulfilled(val)) : resolve(val)
             } catch (e) {
@@ -117,13 +116,12 @@ Promise.prototype.catch = function (onRejected) {
 
 var a = new Promise((resolve, reject) => {
   console.log(1)
-  setTimeout(() => { resolve('hehe'); }, 1000)
+  setTimeout(() => { resolve('delay') }, 1000)
 })
   .then(val => { console.log('1then', val); return 888 })
-  .then(() => {
+  .then(val => {
     return new Promise(resolve => {
-      // setTimeout(() => resolve(668), 0)
-      resolve(668)
+      setTimeout(() => resolve(val + 111), 0)
     })
   })
   .then(val => { console.log('last val', val); return val + 20 })
@@ -131,5 +129,5 @@ var a = new Promise((resolve, reject) => {
 
 
 setTimeout(function () {
-  a.then(val => console.log('------vvval', val))
+  a.then(val => console.log('--vvval', val))
 }, 4000)
