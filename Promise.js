@@ -91,3 +91,24 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
 Promise.prototype.catch = function (onRejected) {
   return this.then(null, onRejected)
 }
+
+
+
+var a = new Promise((resolve, reject) => {
+  console.log(1)
+  setTimeout(() => { resolve('hehe'); }, 1000)
+})
+  .then(val => { console.log('1then', val); return 888 })
+  .then(() => {
+    return new Promise(resolve => {
+      // setTimeout(() => resolve(668), 0)
+      resolve(668)
+    })
+  })
+  .then(val => { console.log('last val', val); return val + 20 })
+  .catch(e => console.log(e.message))
+
+
+setTimeout(function () {
+  a.then(val => console.log('------vvval', val))
+}, 4000)
