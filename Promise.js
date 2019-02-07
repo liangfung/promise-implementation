@@ -20,24 +20,31 @@ function Promise(resolver) {
 
   const resolve = (val) => {
     if (this.state === PENDING) {
-      this.state = FULFILLED
-      this.value = val
       // 异步执行
       setTimeout(() => {
-        // console.log(this.handlers)
+        this.state = FULFILLED
+        this.value = val
         while (this.handlers.length) {
           let queueItem = deQueue()
           if (queueItem) {
-            let { onFulfilled, onRejected, resolve } = queueItem
+            let { onFulfilled, resolve, reject } = queueItem
             if (val === this) {
               throw new Error('promise不能promise自己')
             }
-            if (isPromise(val)) {
-              return val.then(onFulfilled, onRejected)
-            }
-            if (isFunction(onFulfilled)) {
-              var result = onFulfilled(this.value)
-              resolve(result)
+            // if (isPromise(val)) {
+            //   console.log(onFulfilled.toString(), 'val as promise')
+            //   return val.then(res => {
+            //     try {
+            //       isFunction(onFulfilled) ? resolve(onFulfilled(res)) : resolve(res)
+            //     } catch (e) {
+            //       reject(e)
+            //     }
+            //   }, reject)
+            // }
+            try {
+              isFunction(onFulfilled) ? resolve(onFulfilled(val)) : resolve(val)
+            } catch (e) {
+              reject(e)
             }
           }
         }
@@ -47,19 +54,18 @@ function Promise(resolver) {
 
   const reject = (reason) => {
     if (this.state === PENDING) {
-      this.state = REJECTED
-      this.value = reason
       setTimeout(() => {
+        this.state = REJECTED
+        this.value = reason
         while (this.handlers.length) {
-          let { onRejected } = deQueue()
-          if (!isFunction(onRejected)) {
-            throw new Error('uncaugth promise error')
-          } else {
-            onRejected(this.value)
+          let { onRejected, resolve, reject } = deQueue()
+          try {
+            isFunction(onRejected) ? resolve(onRejected(reason)) : reject(reason)
+          } catch (error) {
+            reject(error)
           }
         }
       }, 0)
-
     }
   }
 
@@ -92,17 +98,21 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
     if (this.state === PENDING) {
       this.handlers.push({ onFulfilled, onRejected, resolve, reject })
     }
-    if (this.state === FULFILLED) {
-      onFulfilled(this.value)
-    }
-    if (this.state === REJECTED) {
-      onRejected(this.value)
+    try {
+      if (this.state === FULFILLED) {
+        onFulfilled(this.value)
+      }
+      if (this.state === REJECTED) {
+        onRejected(this.value)
+      }
+    } catch (e) {
+      reject(e)
     }
   })
 }
 
 Promise.prototype.catch = function (onRejected) {
-  this.then(null, onRejected)
+  return this.then(null, onRejected)
 }
 
 var a = new Promise((resolve, reject) => {
@@ -110,12 +120,16 @@ var a = new Promise((resolve, reject) => {
   setTimeout(() => { resolve('hehe'); }, 1000)
 })
   .then(val => { console.log('1then', val); return 888 })
-  .then(val => { console.log('2then', val); return 66 })
   .then(() => {
-    return new Promise(resolve => setTimeout(() => resolve(666), 3000))
+    return new Promise(resolve => {
+      // setTimeout(() => resolve(668), 0)
+      resolve(668)
+    })
   })
+  .then(val => { console.log('last val', val); return val + 20 })
+  .catch(e => console.log(e.message))
 
 
-setTimeout(function(){
-  a.then(val=>console.log('vvval'))
-},2000)
+setTimeout(function () {
+  a.then(val => console.log('------vvval', val))
+}, 4000)
