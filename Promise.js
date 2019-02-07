@@ -35,15 +35,15 @@ const fire = (promise, state, value) => {
 
 }
 
-const resolutionProcedure = (promise, value, onFulfilled, onRejected) => {
+const resolutionProcedure = (promise, value, doResolve, doReject) => {
   if (promise === value) {
     let reason = new TypeError('same promise')
-    return onRejected(reason)
+    return doReject(reason)
   }
   if (isPromise(value)) {
-    return value.then(onFulfilled, onRejected)
+    return value.then(doResolve, doReject)
   }
-  onFulfilled(value)
+  doResolve(value)
 }
 
 function Promise(resolver) {
@@ -51,19 +51,20 @@ function Promise(resolver) {
   this.state = PENDING
   this.handlers = []
 
-  const onFulfilled = val => fire(this, FULFILLED, val)
-  const onRejected = val => fire(this, REJECTED, val)
+  const doResolve = val => fire(this, FULFILLED, val)
+  const doReject = val => fire(this, REJECTED, val)
 
   const resolve = (val) => {
     if (this.state === PENDING) {
       // 异步执行
-      resolutionProcedure(this, val, onFulfilled, onRejected)
+      resolutionProcedure(this, val, doResolve, doReject)
     }
   }
 
   const reject = (reason) => {
     if (this.state === PENDING) {
-      onRejected(reason)
+      doReject(reason)
+      // resolutionProcedure('reject', this, reason, onFulfilled, onRejected)
     }
   }
 
@@ -104,7 +105,7 @@ Promise.prototype.catch = function (onRejected) {
 }
 
 
-
+// test
 var a = new Promise((resolve, reject) => {
   console.log(1)
   setTimeout(() => { resolve('hehe') }, 1000)
@@ -115,9 +116,14 @@ var a = new Promise((resolve, reject) => {
       setTimeout(() => resolve(668), 0)
     })
   })
-  .then(() => { throw new Error('aaaaa') })
+  .then(() => { throw new Error('aaaa') })
   .then(val => { console.log('last val', val); return val + 20 })
-  .catch(e => console.log(e.message))
+  .catch(e => {
+    return new Promise((resolve, reject) => {
+      console.log(e.message)
+      resolve(798)
+    })
+  })
 
 
 setTimeout(function () {
