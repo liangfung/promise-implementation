@@ -36,7 +36,6 @@ const fire = (promise, state, value) => {
 }
 
 const resolutionProcedure = (promise, value, onFulfilled, onRejected) => {
-  console.log(onFulfilled.toString())
   if (promise === value) {
     let reason = new TypeError('same promise')
     return onRejected(reason)
@@ -111,15 +110,15 @@ var a = new Promise((resolve, reject) => {
   setTimeout(() => { resolve('hehe') }, 1000)
 })
   .then(val => { console.log('1then', val); return 888 })
-  .then(() => {
-    return new Promise(resolve => {
-      setTimeout(() => resolve(668), 0)
-    })
-  })
-  .then(val => { console.log('last val', val); return val + 20 })
-  .catch(e => console.log(e.message))
+  // .then(() => {
+  //   return new Promise(resolve => {
+  //     setTimeout(() => resolve(668), 0)
+  //   })
+  // })
+  // .then(val => { console.log('last val', val); return val + 20 })
+  // .catch(e => console.log(e.message))
 
 
-setTimeout(function () {
-  a.then(val => console.log('------vvval', val))
-}, 4000)
+// setTimeout(function () {
+//   a.then(val => console.log('------vvval', val))
+// }, 4000)
