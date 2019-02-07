@@ -35,7 +35,7 @@ const fire = (promise, state, value) => {
 
 }
 
-const resolutionProcedure = (promise, value, doResolve, doReject) => {
+const resolutionProcedure = (type, promise, value, doResolve, doReject) => {
   if (promise === value) {
     let reason = new TypeError('same promise')
     return doReject(reason)
@@ -43,7 +43,12 @@ const resolutionProcedure = (promise, value, doResolve, doReject) => {
   if (isPromise(value)) {
     return value.then(doResolve, doReject)
   }
-  doResolve(value)
+  if (type === 'resolve') {
+    doResolve(value)
+  } else {
+    doReject(value)
+  }
+
 }
 
 function Promise(resolver) {
@@ -57,14 +62,14 @@ function Promise(resolver) {
   const resolve = (val) => {
     if (this.state === PENDING) {
       // 异步执行
-      resolutionProcedure(this, val, doResolve, doReject)
+      resolutionProcedure('resolve', this, val, doResolve, doReject)
     }
   }
 
   const reject = (reason) => {
     if (this.state === PENDING) {
-      doReject(reason)
-      // resolutionProcedure('reject', this, reason, onFulfilled, onRejected)
+      // doReject(reason)
+      resolutionProcedure('reject', this, reason, doResolve, doReject)
     }
   }
 
