@@ -8,51 +8,63 @@ const PENDING = 'pending'
 const FULFILLED = 'fulfilled'
 const REJECTED = 'rejected'
 
+const fire = (promise, state, value) => {
+  const deQueue = () => {
+    let handler = promise.handlers.shift()
+    return handler
+  }
+  setTimeout(() => {
+    promise.state = state
+    promise.value = value
+    while (promise.handlers.length) {
+      let queueItem = deQueue()
+      if (queueItem) {
+        let { onFulfilled, onRejected, resolve, reject } = queueItem
+        try {
+          if (state === FULFILLED) {
+            isFunction(onFulfilled) ? resolve(onFulfilled(result)) : resolve(result)
+          } else if (state === REJECTED) {
+            isFunction(onRejected) ? resolve(onRejected(result)) : reject(result)
+          }
+        } catch (error) {
+          reject(error)
+        }
+      }
+    }
+  }, 0)
+
+}
+
+const resolutionProcedure = (promise, value, onFulfilled, onRejected) => {
+  console.log(onFulfilled.toString())
+  if (promise === value) {
+    let reason = new TypeError('same promise')
+    return onRejected(reason)
+  }
+  if (isPromise(value)) {
+    return value.then(onFulfilled, onRejected)
+  }
+  onFulfilled(value)
+}
+
 function Promise(resolver) {
   this.value = null
   this.state = PENDING
   this.handlers = []
 
-  const deQueue = () => {
-    let handler = this.handlers.shift()
-    return handler
-  }
+  const onFulfilled = val => fire(this, FULFILLED, val)
+  const onRejected = val => fire(this, REJECTED, val)
 
   const resolve = (val) => {
     if (this.state === PENDING) {
       // 异步执行
-      setTimeout(() => {
-        this.state = FULFILLED
-        this.value = val
-        while (this.handlers.length) {
-          let queueItem = deQueue()
-          if (queueItem) {
-            let { onFulfilled, resolve, reject } = queueItem
-            try {
-              isFunction(onFulfilled) ? resolve(onFulfilled(val)) : resolve(val)
-            } catch (e) {
-              reject(e)
-            }
-          }
-        }
-      }, 0)
+      resolutionProcedure(this, val, onFulfilled, onRejected)
     }
   }
 
   const reject = (reason) => {
     if (this.state === PENDING) {
-      setTimeout(() => {
-        this.state = REJECTED
-        this.value = reason
-        while (this.handlers.length) {
-          let { onRejected, resolve, reject } = deQueue()
-          try {
-            isFunction(onRejected) ? resolve(onRejected(reason)) : reject(reason)
-          } catch (error) {
-            reject(error)
-          }
-        }
-      }, 0)
+      onRejected(reason)
     }
   }
 
@@ -96,13 +108,12 @@ Promise.prototype.catch = function (onRejected) {
 
 var a = new Promise((resolve, reject) => {
   console.log(1)
-  setTimeout(() => { resolve('hehe'); }, 1000)
+  setTimeout(() => { resolve('hehe') }, 1000)
 })
   .then(val => { console.log('1then', val); return 888 })
   .then(() => {
     return new Promise(resolve => {
-      // setTimeout(() => resolve(668), 0)
-      resolve(668)
+      setTimeout(() => resolve(668), 0)
     })
   })
   .then(val => { console.log('last val', val); return val + 20 })
