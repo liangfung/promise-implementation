@@ -28,19 +28,6 @@ function Promise(resolver) {
           let queueItem = deQueue()
           if (queueItem) {
             let { onFulfilled, resolve, reject } = queueItem
-            if (val === this) {
-              throw new Error('promise不能promise自己')
-            }
-            // if (isPromise(val)) {
-            //   console.log(onFulfilled.toString(), 'val as promise')
-            //   return val.then(res => {
-            //     try {
-            //       isFunction(onFulfilled) ? resolve(onFulfilled(res)) : resolve(res)
-            //     } catch (e) {
-            //       reject(e)
-            //     }
-            //   }, reject)
-            // }
             try {
               isFunction(onFulfilled) ? resolve(onFulfilled(val)) : resolve(val)
             } catch (e) {
@@ -76,12 +63,6 @@ function Promise(resolver) {
     reject(e)
   }
 
-  // 目前存在的问题
-  // 1. 怎么变为 mircotask  --- 暂时用settimeout
-  // 2. then怎么返回新的promise  --- new Promise
-  //   2.1 promise需要传一个resolver，then返回的新的resolver怎么写
-  //   2.2 then里面的resolve怎么触发 --- then函数里面，注册到promise1的handlers queue
-
 }
 
 /**
@@ -90,10 +71,6 @@ function Promise(resolver) {
  * @returns {Promise} promise
  */
 Promise.prototype.then = function (onFulfilled, onRejected) {
-  // then返回一个新的promise
-  // then接受两个参数
-  // then的onFulfilled是函数的话，在promise的状态变为fulfilled的时候就要调用onFulfilled
-  // then的onRejected是函数的话，在promsie的状态变为rejected的时候就要调用onRejected
   return new Promise((resolve, reject) => {
     if (this.state === PENDING) {
       this.handlers.push({ onFulfilled, onRejected, resolve, reject })
@@ -114,22 +91,3 @@ Promise.prototype.then = function (onFulfilled, onRejected) {
 Promise.prototype.catch = function (onRejected) {
   return this.then(null, onRejected)
 }
-
-var a = new Promise((resolve, reject) => {
-  console.log(1)
-  setTimeout(() => { resolve('hehe'); }, 1000)
-})
-  .then(val => { console.log('1then', val); return 888 })
-  .then(() => {
-    return new Promise(resolve => {
-      // setTimeout(() => resolve(668), 0)
-      resolve(668)
-    })
-  })
-  .then(val => { console.log('last val', val); return val + 20 })
-  .catch(e => console.log(e.message))
-
-
-setTimeout(function () {
-  a.then(val => console.log('------vvval', val))
-}, 4000)
